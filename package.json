@@ -1,0 +1,21 @@
+{
+  "name": "skill-capture",
+  "version": "1.0.0",
+  "description": "A privacy-first AI agent that learns your workflows and turns them into one-click Skills.",
+  "bin": {
+    "skill-capture-mcp": "./bin/skill-capture-mcp.js",
+    "skill-capture-cli": "./bin/skill-capture-cli.js"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "claude",
+    "agent"
+  ],
+  "author": "SkillCapture Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/skill-capture"
+  }
+}

@@ -35,14 +35,13 @@ Skills are stored as **Markdown files** — you can read, edit, and version-cont
 
 ## Quick Start
 
-### 1. Clone & Install
+### 1. Install
 
+**Python (uvx / pipx)** 🐍
 ```bash
-git clone https://github.com/YOUR_USERNAME/skill-capture.git
-cd skill-capture
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+uvx skill-capture-mcp
+# or
+pipx install skill-capture
 ```
 
 ### 2. Configure your LLM provider
@@ -65,7 +64,8 @@ SkillCapture ships with **three built-in providers**. Set `LLM_PROVIDER` in `.en
 ### 3. Run the MCP Server
 
 ```bash
-python server.py
+skill-capture-mcp
+# (or `npx @YOUR_USERNAME/skill-capture-mcp`)
 ```
 
 Then connect from **Claude Desktop**, **Cursor**, **Windsurf**, or any MCP-compatible client.
@@ -99,8 +99,8 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 {
   "mcpServers": {
     "skill-capture": {
-      "command": "python",
-      "args": ["/absolute/path/to/skill-capture/server.py"],
+      "command": "skill-capture-mcp",
+      "args": [],
       "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
     }
   }
@@ -117,8 +117,8 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 {
   "mcpServers": {
     "skill-capture": {
-      "command": "python",
-      "args": ["/absolute/path/to/skill-capture/server.py"],
+      "command": "skill-capture-mcp",
+      "args": [],
       "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
     }
   }
@@ -132,7 +132,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 Run:
 
 ```bash
-codex mcp add skill-capture -- python /absolute/path/to/skill-capture/server.py
+codex mcp add skill-capture -- skill-capture-mcp
 ```
 
 Or add to `~/.codex/config.toml`:
@@ -140,8 +140,8 @@ Or add to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.skill-capture]
 type = "stdio"
-command = "python"
-args = ["/absolute/path/to/skill-capture/server.py"]
+command = "skill-capture-mcp"
+args = []
 
 [mcp_servers.skill-capture.env]
 LLM_PROVIDER = "openai"
@@ -156,10 +156,10 @@ OPENAI_API_KEY = "sk-..."
 Don't need MCP? Use SkillCapture standalone from the terminal:
 
 ```bash
-python cli.py analyze           # Run the Day 1/Day 2 pipeline
-python cli.py list              # List all promoted skills
-python cli.py pending           # View pending drafts in the sandbox
-python cli.py run "Deploy App"  # Load and display a specific skill
+skill-capture-cli analyze           # Run the Day 1/Day 2 pipeline
+skill-capture-cli list              # List all promoted skills
+skill-capture-cli pending           # View pending drafts in the sandbox
+skill-capture-cli run "Deploy App"  # Load and display a specific skill
 ```
 
 ---

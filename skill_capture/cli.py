@@ -16,8 +16,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from core.storage import load_index, load_skill_from_vault, load_pending
-from core.scheduler import run_pipeline
+from skill_capture.core.storage import load_index, load_skill_from_vault, load_pending
+from skill_capture.core.scheduler import run_pipeline
 
 
 def cmd_analyze(args: argparse.Namespace) -> None:

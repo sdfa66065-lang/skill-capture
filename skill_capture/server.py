@@ -15,9 +15,9 @@ import os
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
-from core.storage import load_index, load_skill_from_vault, load_pending, rebuild_index
-from core.scheduler import run_pipeline, start_scheduler, stop_scheduler, _get_todays_log
-from core.evaluator import Evaluator
+from skill_capture.core.storage import load_index, load_skill_from_vault, load_pending, rebuild_index
+from skill_capture.core.scheduler import run_pipeline, start_scheduler, stop_scheduler, _get_todays_log
+from skill_capture.core.evaluator import Evaluator
 
 load_dotenv()  # loads .env from the project root
 
@@ -27,13 +27,7 @@ logger = logging.getLogger("memory_agent.server")
 # ---------------------------------------------------------------------------
 # Initialize the MCP server
 # ---------------------------------------------------------------------------
-mcp = FastMCP(
-    "SkillCapture",
-    description=(
-        "A privacy-first AI agent that watches daily chats, "
-        "learns repeated workflows, and turns them into one-click Skills."
-    ),
-)
+mcp = FastMCP("SkillCapture")
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +93,7 @@ def get_pending() -> str:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
+def main() -> None:
     logger.info("Starting Memory Agent MCP server...")
 
     # Start the nightly scheduler using values from .env (defaults: 23:59)
@@ -108,3 +102,6 @@ if __name__ == "__main__":
     start_scheduler(hour=schedule_hour, minute=schedule_minute)
 
     mcp.run()
+
+if __name__ == "__main__":
+    main()
