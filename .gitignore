@@ -1,0 +1,32 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs (user-specific data)
+logs/*.txt
+logs/*.md
+logs/*.json
+
+# Runtime data (user-specific)
+data/pending.json
+skills/index.json
+skills/*.md
