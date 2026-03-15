@@ -8,6 +8,7 @@ from core.providers import (
     OpenAIClient,
     AnthropicClient,
     GeminiClient,
+    OllamaClient,
     get_llm_client,
 )
 
@@ -36,6 +37,10 @@ class TestGetLlmClient:
         client = get_llm_client("gemini")
         assert isinstance(client, GeminiClient)
 
+    def test_returns_ollama(self):
+        client = get_llm_client("ollama")
+        assert isinstance(client, OllamaClient)
+
     def test_raises_on_unknown_provider(self):
         with pytest.raises(ValueError, match="Unknown LLM provider"):
             get_llm_client("unknown_provider")
@@ -55,7 +60,7 @@ class TestGetLlmClient:
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
         monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
-        for provider in ("openai", "anthropic", "gemini"):
+        for provider in ("openai", "anthropic", "gemini", "ollama"):
             client = get_llm_client(provider)
             assert isinstance(client, LLMClient)
             assert hasattr(client, "chat")
