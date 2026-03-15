@@ -10,12 +10,16 @@ Tools:
 
 import json
 import logging
+import os
 
+from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 from core.storage import load_index, load_skill_from_vault, load_pending, rebuild_index
 from core.scheduler import run_pipeline, start_scheduler, stop_scheduler, _get_todays_log
 from core.evaluator import Evaluator
+
+load_dotenv()  # loads .env from the project root
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("memory_agent.server")
@@ -97,6 +101,10 @@ def get_pending() -> str:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     logger.info("Starting Memory Agent MCP server...")
-    # Optionally start the nightly scheduler in the background
-    # start_scheduler(hour=23, minute=59)
+
+    # Start the nightly scheduler using values from .env (defaults: 23:59)
+    schedule_hour = int(os.getenv("SCHEDULE_HOUR", "23"))
+    schedule_minute = int(os.getenv("SCHEDULE_MINUTE", "59"))
+    start_scheduler(hour=schedule_hour, minute=schedule_minute)
+
     mcp.run()
