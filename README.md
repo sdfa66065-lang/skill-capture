@@ -70,9 +70,12 @@ python server.py
 
 Then connect from **Claude Desktop**, **Cursor**, **Windsurf**, or any MCP-compatible client.
 
-### 4. Connect to Claude Desktop
+### 4. Connect to your MCP client
 
-Add this to your Claude Desktop MCP config (`claude_desktop_config.json`):
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -80,13 +83,71 @@ Add this to your Claude Desktop MCP config (`claude_desktop_config.json`):
     "skill-capture": {
       "command": "python",
       "args": ["/absolute/path/to/skill-capture/server.py"],
-      "env": {
-        "OPENAI_API_KEY": "sk-..."
-      }
+      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
     }
   }
 }
 ```
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
+
+Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
+
+```json
+{
+  "mcpServers": {
+    "skill-capture": {
+      "command": "python",
+      "args": ["/absolute/path/to/skill-capture/server.py"],
+      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Windsurf</strong></summary>
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "skill-capture": {
+      "command": "python",
+      "args": ["/absolute/path/to/skill-capture/server.py"],
+      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Codex CLI</strong></summary>
+
+Run:
+
+```bash
+codex mcp add skill-capture -- python /absolute/path/to/skill-capture/server.py
+```
+
+Or add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.skill-capture]
+type = "stdio"
+command = "python"
+args = ["/absolute/path/to/skill-capture/server.py"]
+
+[mcp_servers.skill-capture.env]
+LLM_PROVIDER = "openai"
+OPENAI_API_KEY = "sk-..."
+```
+</details>
 
 ---
 
