@@ -51,13 +51,16 @@ cp .env.example .env
 # Edit .env with your provider and API key
 ```
 
-SkillCapture ships with **three built-in providers**. Set `LLM_PROVIDER` in `.env`:
+SkillCapture ships with **four built-in providers**. Set `LLM_PROVIDER` in `.env`:
 
 | Provider | `LLM_PROVIDER` | API Key Env Var | Default Model |
 |----------|---------------|-----------------|---------------|
 | OpenAI | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
 | Google Gemini | `gemini` | `GOOGLE_API_KEY` | `gemini-2.0-flash` |
+| Ollama (local) | `ollama` | _none_ | `llama3.1` (override with `OLLAMA_MODEL`) |
+
+**Ollama / local models:** Run `ollama serve` (or your preferred OpenAI-compatible local host) before launching SkillCapture. You can override the defaults with `OLLAMA_MODEL`, `OLLAMA_HOST` (defaults to `http://127.0.0.1:11434`), and `OLLAMA_TIMEOUT` (seconds).
 
 > **Extensible**: Need a different provider? Implement the `LLMClient.chat()` interface in `core/providers.py`.
 
@@ -191,7 +194,7 @@ skill-capture/
 │   ├── models.py             # Two-tier Pydantic schemas
 │   ├── storage.py            # File-system I/O layer
 │   ├── evaluator.py          # LLM client interface + evaluator logic
-│   ├── providers.py          # OpenAI, Anthropic, Gemini clients
+│   ├── providers.py          # OpenAI, Anthropic, Gemini, Ollama clients
 │   └── scheduler.py          # APScheduler nightly worker
 ├── server.py                 # FastMCP server
 ├── cli.py                    # Standalone CLI interface
@@ -205,7 +208,7 @@ skill-capture/
 - **Python** — Core language
 - **[FastMCP](https://github.com/jlowin/fastmcp)** — Model Context Protocol server framework
 - **[Pydantic](https://docs.pydantic.dev/)** — Structured data validation
-- **[OpenAI](https://platform.openai.com/) · [Anthropic](https://docs.anthropic.com/) · [Google Gemini](https://ai.google.dev/)** — LLM providers (swappable)
+- **[OpenAI](https://platform.openai.com/) · [Anthropic](https://docs.anthropic.com/) · [Google Gemini](https://ai.google.dev/) · [Ollama](https://ollama.com/)** — LLM providers (swappable)
 - **[python-frontmatter](https://github.com/eyeseast/python-frontmatter)** — Markdown + YAML parsing
 - **[APScheduler](https://apscheduler.readthedocs.io/)** — Background task scheduling
 
@@ -215,7 +218,7 @@ skill-capture/
 
 Contributions are welcome! Some ideas:
 
-- 🔌 Add more LLM providers (Ollama, local models)
+- 🔌 Add more LLM providers (LM Studio, Together AI, vLLM, etc.)
 - 🎨 Build the web UI for skill management
 - 📊 Add usage analytics and skill effectiveness tracking
 - 🧪 Improve the keyword matching with embeddings

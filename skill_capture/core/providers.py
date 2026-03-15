@@ -1,16 +1,9 @@
-"""
-LLM Provider Clients — Concrete implementations of the LLMClient ABC.
-
-Supported providers:
-  - OpenAI   (default)
-  - Anthropic
-  - Google Gemini
-
-Use ``get_llm_client()`` to auto-select based on the LLM_PROVIDER env var.
-"""
+"""LLM Provider Clients — concrete implementations of :class:`LLMClient`."""
 
 import os
 from typing import Optional
+
+import requests
 
 from .evaluator import LLMClient
 
@@ -98,12 +91,52 @@ class GeminiClient(LLMClient):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Ollama / Local models
+# ═══════════════════════════════════════════════════════════════════════════
+class OllamaClient(LLMClient):
+    """LLM client that talks to a local Ollama server over HTTP."""
+
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        host: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ):
+        self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1")
+        self.base_url = (
+            host or os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+        ).rstrip("/")
+        self.timeout = timeout or float(os.getenv("OLLAMA_TIMEOUT", "120"))
+
+    def chat(self, system_prompt: str, user_prompt: str) -> str:
+        response = requests.post(
+            f"{self.base_url}/api/chat",
+            json={
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "stream": False,
+            },
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        data = response.json()
+        message = data.get("message", {})
+        if isinstance(message, dict):
+            return message.get("content", "") or ""
+        return ""
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Factory
 # ═══════════════════════════════════════════════════════════════════════════
 _PROVIDERS = {
     "openai": OpenAIClient,
     "anthropic": AnthropicClient,
     "gemini": GeminiClient,
+    "ollama": OllamaClient,
 }
 
 
