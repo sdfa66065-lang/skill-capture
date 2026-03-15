@@ -15,8 +15,6 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
-from openai import OpenAI
-
 from .models import PendingDraft, PromotedSkill, TaskAction, SkillState
 
 
@@ -32,25 +30,6 @@ class LLMClient(ABC):
         ...
 
 
-class OpenAIClient(LLMClient):
-    """Concrete implementation using OpenAI API."""
-
-    def __init__(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None):
-        self.model = model
-        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
-
-    def chat(self, system_prompt: str, user_prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.3,
-        )
-        return response.choices[0].message.content or ""
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # Evaluator  (uses whichever LLMClient is injected)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -58,7 +37,10 @@ class Evaluator:
     """Orchestrates Day 1 extraction and Day 2 promotion using an LLM."""
 
     def __init__(self, llm: Optional[LLMClient] = None):
-        self.llm = llm or OpenAIClient()
+        if llm is None:
+            from .providers import get_llm_client
+            llm = get_llm_client()
+        self.llm = llm
 
     # -------------------------------------------------------------------
     # Day 1 — Lightweight extraction  (cheap)

@@ -45,13 +45,22 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Set your API key
+### 2. Configure your LLM provider
 
 ```bash
-export OPENAI_API_KEY="sk-..."
+cp .env.example .env
+# Edit .env with your provider and API key
 ```
 
-> **Model-agnostic**: Ships with OpenAI support, but the evaluator uses an abstract `LLMClient` interface. Swap to Anthropic, Ollama, or any provider by implementing one `chat()` method.
+SkillCapture ships with **three built-in providers**. Set `LLM_PROVIDER` in `.env`:
+
+| Provider | `LLM_PROVIDER` | API Key Env Var | Default Model |
+|----------|---------------|-----------------|---------------|
+| OpenAI | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
+| Anthropic | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
+| Google Gemini | `gemini` | `GOOGLE_API_KEY` | `gemini-2.0-flash` |
+
+> **Extensible**: Need a different provider? Implement the `LLMClient.chat()` interface in `core/providers.py`.
 
 ### 3. Run the MCP Server
 
@@ -107,7 +116,8 @@ skill-capture/
 ├── core/
 │   ├── models.py             # Two-tier Pydantic schemas
 │   ├── storage.py            # File-system I/O layer
-│   ├── evaluator.py          # Model-agnostic LLM client
+│   ├── evaluator.py          # LLM client interface + evaluator logic
+│   ├── providers.py          # OpenAI, Anthropic, Gemini clients
 │   └── scheduler.py          # APScheduler nightly worker
 ├── server.py                 # FastMCP server
 └── requirements.txt
@@ -120,7 +130,7 @@ skill-capture/
 - **Python** — Core language
 - **[FastMCP](https://github.com/jlowin/fastmcp)** — Model Context Protocol server framework
 - **[Pydantic](https://docs.pydantic.dev/)** — Structured data validation
-- **[OpenAI API](https://platform.openai.com/)** — LLM engine (swappable)
+- **[OpenAI](https://platform.openai.com/) · [Anthropic](https://docs.anthropic.com/) · [Google Gemini](https://ai.google.dev/)** — LLM providers (swappable)
 - **[python-frontmatter](https://github.com/eyeseast/python-frontmatter)** — Markdown + YAML parsing
 - **[APScheduler](https://apscheduler.readthedocs.io/)** — Background task scheduling
 
@@ -130,7 +140,7 @@ skill-capture/
 
 Contributions are welcome! Some ideas:
 
-- 🔌 Add more LLM providers (Anthropic, Ollama, local models)
+- 🔌 Add more LLM providers (Ollama, local models)
 - 🎨 Build the web UI for skill management
 - 📊 Add usage analytics and skill effectiveness tracking
 - 🧪 Improve the keyword matching with embeddings
