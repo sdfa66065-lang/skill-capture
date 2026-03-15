@@ -151,6 +151,19 @@ OPENAI_API_KEY = "sk-..."
 
 ---
 
+## CLI Mode
+
+Don't need MCP? Use SkillCapture standalone from the terminal:
+
+```bash
+python cli.py analyze           # Run the Day 1/Day 2 pipeline
+python cli.py list              # List all promoted skills
+python cli.py pending           # View pending drafts in the sandbox
+python cli.py run "Deploy App"  # Load and display a specific skill
+```
+
+---
+
 ## MCP Tools
 
 Once connected, your AI client has access to these tools:
@@ -181,6 +194,7 @@ skill-capture/
 │   ├── providers.py          # OpenAI, Anthropic, Gemini clients
 │   └── scheduler.py          # APScheduler nightly worker
 ├── server.py                 # FastMCP server
+├── cli.py                    # Standalone CLI interface
 └── requirements.txt
 ```
 
