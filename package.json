@@ -1,21 +1,17 @@
 {
-  "name": "skill-capture",
-  "version": "1.0.0",
-  "description": "A privacy-first AI agent that learns your workflows and turns them into one-click Skills.",
-  "bin": {
-    "skill-capture-mcp": "./bin/skill-capture-mcp.js",
-    "skill-capture-cli": "./bin/skill-capture-cli.js"
+  "name": "fish-cards-game",
+  "private": true,
+  "type": "module",
+  "workspaces": ["shared", "server", "client"],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "test": "npm test -w server",
+    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client --noEmit"
   },
-  "keywords": [
-    "mcp",
-    "ai",
-    "claude",
-    "agent"
-  ],
-  "author": "SkillCapture Contributors",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/skill-capture"
+  "devDependencies": {
+    "typescript": "^5.9.0"
   }
 }
