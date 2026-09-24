@@ -153,7 +153,10 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
     },
 
     'zipai.leave': (s) => {
+      const inRoom = s.zipaiRoom !== null;
       s.leaveZipai();
+      // leave() 会托管打完并结算本局，绕过了房间的结算推送，这里补推余额
+      if (inRoom && s.userId !== null) s.push('coins', { coins: wallet.balance(s.userId) });
       return {};
     },
   };

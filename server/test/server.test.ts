@@ -82,7 +82,9 @@ describe('game server', () => {
     expect(await call('zipai.action', { action: { type: 'chi', cards: 'x' } as never })).toMatchObject({ ok: false });
     expect(pushes.some((p) => p.cmd === 'zipai.state')).toBe(true);
 
+    const coinPushes = pushes.filter((p) => p.cmd === 'coins').length;
     expect(await call('zipai.leave', {})).toMatchObject({ ok: true });
+    expect(pushes.filter((p) => p.cmd === 'coins').length).toBe(coinPushes + 1);
     expect(await call('zipai.next', {})).toMatchObject({ ok: false, error: 'NOT_IN_ROOM' });
     ws.close();
   });
