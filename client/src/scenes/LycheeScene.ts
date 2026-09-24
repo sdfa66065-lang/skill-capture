@@ -9,6 +9,7 @@ import {
 } from '@game/shared';
 import { net, NetError } from '../net.ts';
 import { session } from '../session.ts';
+import { chiptune, sfx } from '../sound.ts';
 import { button, errorText, text, toast } from '../ui.ts';
 
 const W = 1280;
@@ -37,6 +38,8 @@ export class LycheeScene extends Phaser.Scene {
   private winText!: Phaser.GameObjects.Text;
   private autoButton!: Phaser.GameObjects.Container;
   private spinButton!: Phaser.GameObjects.Container;
+  /** 停止滚动音效；没在滚动时为 null */
+  private stopRollSound: (() => void) | null = null;
 
   constructor() {
     super('Lychee');
@@ -55,6 +58,8 @@ export class LycheeScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', () => this.spin());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.auto = false;
+      this.stopRollSound?.();
+      this.stopRollSound = null;
       this.input.keyboard?.removeAllListeners();
     });
   }
@@ -114,6 +119,11 @@ export class LycheeScene extends Phaser.Scene {
     this.autoButton = button(this, 960, y, '自动：关', () => this.toggleAuto(), { width: 150, height: 56, fontSize: 22, color: 0x495057 });
     button(this, 1140, y, '赔率表', () => this.showPaytable(), { width: 140, height: 56, fontSize: 22, color: 0x495057 });
     button(this, 90, 40, '← 大厅', () => this.scene.start('Lobby'), { width: 140, height: 50, fontSize: 22 });
+    const muteButton = button(this, W - 70, 40, chiptune.muted ? '🔇 静音' : '🔊 声音', () => {
+      chiptune.setMuted(!chiptune.muted);
+      (muteButton.getAt(1) as Phaser.GameObjects.Text).setText(chiptune.muted ? '🔇 静音' : '🔊 声音');
+      sfx.click();
+    }, { width: 120, height: 50, fontSize: 20, color: 0x495057 });
 
     this.winText = text(this, W / 2, 552, '', 34, '#ffd60a').setStroke('#6a040f', 6).setDepth(30);
   }
@@ -121,6 +131,7 @@ export class LycheeScene extends Phaser.Scene {
   private changeBet(delta: number) {
     if (this.spinning) return;
     this.betIndex = Phaser.Math.Clamp(this.betIndex + delta, 0, LYCHEE_LINE_BETS.length - 1);
+    if (delta) sfx.click();
     const lineBet = LYCHEE_LINE_BETS[this.betIndex]!;
     this.betText.setText(`单线 ${lineBet}\n总押 ${lycheeTotalBet(lineBet)}`).setAlign('center');
   }
@@ -139,6 +150,7 @@ export class LycheeScene extends Phaser.Scene {
     const lineBet = LYCHEE_LINE_BETS[this.betIndex]!;
     if (session.coins < lycheeTotalBet(lineBet)) {
       this.stopAuto();
+      sfx.error();
       toast(this, errorText('INSUFFICIENT_COINS'));
       return;
     }
@@ -149,6 +161,8 @@ export class LycheeScene extends Phaser.Scene {
 
     // 先扣掉显示的余额，开奖结果回来后以服务端为准
     session.setCoins(session.coins - lycheeTotalBet(lineBet));
+    sfx.coin();
+    this.stopRollSound = sfx.rolling();
     const rolling = this.startRolling();
     try {
       const [result] = await Promise.all([net.request('lychee.spin', { lineBet }), this.wait(SPIN_MS)]);
@@ -158,10 +172,13 @@ export class LycheeScene extends Phaser.Scene {
     } catch (e) {
       rolling.forEach((t) => t.remove());
       this.stopAuto();
+      sfx.error();
       toast(this, errorText(e instanceof NetError ? e.code : 'INTERNAL'));
       // 失败时恢复显示余额（下一次服务端推送/返回也会校正）
       session.setCoins(session.coins + lycheeTotalBet(lineBet));
     } finally {
+      this.stopRollSound?.();
+      this.stopRollSound = null;
       this.spinning = false;
       this.spinButton.setAlpha(1);
     }
@@ -190,6 +207,11 @@ export class LycheeScene extends Phaser.Scene {
   private async stopRolling(timers: Phaser.Time.TimerEvent[], grid: number[]) {
     for (let col = 0; col < 3; col++) {
       if (col > 0) await this.wait(COLUMN_STOP_GAP_MS);
+      if (col === 2) {
+        this.stopRollSound?.();
+        this.stopRollSound = null;
+      }
+      sfx.reelStop(col);
       for (let row = 0; row < 3; row++) {
         const i = row * 3 + col;
         timers[i]!.remove();
@@ -205,6 +227,7 @@ export class LycheeScene extends Phaser.Scene {
   private async present(r: LycheeOutcome) {
     if (r.fullScreen !== null) return this.presentFullScreen(r);
     if (!r.win) return;
+    sfx.win(r.lines.length);
 
     const g = this.add.graphics();
     this.effects.add(g);
@@ -223,6 +246,7 @@ export class LycheeScene extends Phaser.Scene {
   private async presentFullScreen(r: LycheeOutcome) {
     const sym = LYCHEE_SYMBOLS[r.fullScreen!]!;
     const isLychee = sym.id === LYCHEE_ID;
+    sfx.jackpot(isLychee);
     for (const cell of this.cells) {
       this.tweens.add({ targets: cell, scale: 1.15, duration: 200, yoyo: true, repeat: 7 });
     }
