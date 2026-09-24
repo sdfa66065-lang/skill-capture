@@ -33,8 +33,8 @@ export class LobbyScene extends Phaser.Scene {
     button(this, width / 2, cardY, '🀄 大字牌', () => this.enterZipai(), {
       width: 260, height: 200, color: 0x7b2d26, fontSize: 36,
     });
-    button(this, width / 2 + 320, cardY, '九个荔枝\n敬请期待', () => {}, {
-      width: 260, height: 200, fontSize: 30, disabled: true,
+    button(this, width / 2 + 320, cardY, '🍒 九个荔枝', () => this.scene.start('Lychee'), {
+      width: 260, height: 200, color: 0x7b2cbf, fontSize: 36,
     });
 
     const relief = button(this, width / 2, height - 90, '领取救济金', () => void this.claimRelief(), {

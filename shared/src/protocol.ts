@@ -2,6 +2,7 @@
 // 服务端主动推送：{ cmd, data }（没有 seq）
 
 import type { FishState } from './fish.ts';
+import type { LycheeOutcome } from './lychee.ts';
 import type { ZipaiAction, ZipaiView } from './zipai.ts';
 
 export interface UserInfo {
@@ -36,6 +37,7 @@ export interface Requests {
   'zipai.next': [{}, ZipaiView];
   'zipai.action': [{ action: ZipaiAction }, {}];
   'zipai.leave': [{}, {}];
+  'lychee.spin': [{ lineBet: number }, LycheeOutcome & { coins: number }];
 }
 
 export interface FishHitResult {

@@ -10,6 +10,7 @@ import { GameError } from './errors.ts';
 import { FishRoom } from './fish/FishRoom.ts';
 import { Wallet } from './wallet.ts';
 import { ZipaiRoom } from './zipai/ZipaiRoom.ts';
+import { LycheeMachine } from './lychee/LycheeMachine.ts';
 
 const FISH_TICK_MS = 500;
 
@@ -30,6 +31,7 @@ class Session {
   userId: number | null = null;
   nickname = '';
   zipaiRoom: ZipaiRoom | null = null;
+  lychee: LycheeMachine | null = null;
   fishRoom: FishRoom | null = null;
   fishTimer: NodeJS.Timeout | null = null;
 
@@ -83,6 +85,10 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
         throw new GameError('BAD_REQUEST');
       }
       const user = wallet.loginGuest(deviceId);
+      // 同一连接换号登录时，丢掉上一个账号的游戏状态
+      s.leaveFish();
+      s.leaveZipai();
+      s.lychee = null;
       s.userId = user.id;
       s.nickname = user.nickname;
       return { user, serverTime: Date.now() };
@@ -138,6 +144,12 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
       if (typeof action !== 'object' || action === null) throw new GameError('BAD_REQUEST');
       requireZipaiRoom(s).act(action);
       return {};
+    },
+
+    'lychee.spin': (s, { lineBet }) => {
+      const userId = requireUser(s);
+      s.lychee ??= new LycheeMachine({ userId, wallet, random, now: Date.now, newSpinId: randomUUID });
+      return s.lychee.spin(lineBet);
     },
 
     'zipai.leave': (s) => {
