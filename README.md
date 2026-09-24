@@ -1,228 +1,64 @@
-# SkillCapture 🧠
+# 游戏合集（捕鱼 / 大字牌 / 九个荔枝）
 
-A **privacy-first, local AI agent** that watches your daily chats, automatically learns your repetitive workflows, and turns them into one-click **Skills** — all stored safely on your own hard drive.
+跨平台（网页 → 之后用 Capacitor 打包安卓/iOS）的休闲游戏，只使用虚拟金币，**不能充值、不能兑现**。
+按「一个游戏一个游戏」推进，当前完成：**游客登录 + 金币系统 + 捕鱼（单人）**。
 
-Built with [FastMCP](https://github.com/jlowin/fastmcp) · Works with Claude Desktop, Cursor, Windsurf, and any MCP-compatible client.
+## 技术栈
 
----
+| 目录 | 内容 |
+|---|---|
+| `shared/` | 前后端共用：协议类型、经济数值、鱼的配置和路径算法 |
+| `server/` | Node.js + `ws` + 内置 SQLite（`node:sqlite`），所有扣费和判定都在服务端完成 |
+| `client/` | Vite + Phaser 3；占位美术用代码绘制（`client/src/textures.ts`） |
 
-## How It Works
+需要 Node.js ≥ 22.5。
 
-SkillCapture uses a **two-tier pipeline** inspired by how human memory consolidation works:
-
-### Day 1 — Lightweight Draft (Cheap)
-The AI scans your chat log and extracts potential workflows into a flat JSON cache. No heavy processing — just keywords and action summaries.
-
-### Day 2 — Heavy Promotion (Only on Match)
-If you repeat a workflow, the system detects the keyword overlap and *only then* triggers the expensive generation: building a full, reusable Skill with named variables, step-by-step actions, and trigger phrases.
-
-```
-DISCOVERED → PENDING → PROMOTED → DEPRECATED
-   (Day 1)    (Cache)   (Vault)    (30d unused)
-```
-
-### The Storage Architecture
-
-| Layer | Location | Purpose |
-|-------|----------|---------|
-| **The Sandbox** | `data/pending.json` | Lightweight Day 1 cache — fast read/write |
-| **The Vault** | `skills/*.md` | Promoted skills as human-readable Markdown with YAML frontmatter |
-| **The Index** | `skills/index.json` | Ultra-light manifest so the AI never overloads its context window |
-
-Skills are stored as **Markdown files** — you can read, edit, and version-control them with Git.
-
----
-
-## Quick Start
-
-### 1. Install
-
-**Python (uvx / pipx)** 🐍
-```bash
-uvx skill-capture-mcp
-# or
-pipx install skill-capture
-```
-
-### 2. Configure your LLM provider
+## 本地开发
 
 ```bash
-cp .env.example .env
-# Edit .env with your provider and API key
+npm install
+
+# 终端 1：游戏服务（:8080，数据库 game.db）
+npm run dev:server
+
+# 终端 2：前端热更新（浏览器打开终端里显示的地址，/ws 会自动转发到 :8080）
+npm run dev:client
 ```
 
-SkillCapture ships with **three built-in providers**. Set `LLM_PROVIDER` in `.env`:
+用手机测试：手机和电脑连同一个 Wi-Fi，打开 `dev:client` 输出的 Network 地址。
 
-| Provider | `LLM_PROVIDER` | API Key Env Var | Default Model |
-|----------|---------------|-----------------|---------------|
-| OpenAI | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
-| Anthropic | `anthropic` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
-| Google Gemini | `gemini` | `GOOGLE_API_KEY` | `gemini-2.0-flash` |
-
-> **Extensible**: Need a different provider? Implement the `LLMClient.chat()` interface in `core/providers.py`.
-
-### 3. Run the MCP Server
+## 检查与构建
 
 ```bash
-skill-capture-mcp
-# (or `npx @YOUR_USERNAME/skill-capture-mcp`)
+npm test            # 服务端单元测试 + 集成测试
+npm run typecheck   # 三个包的类型检查
+npm run build       # 打包前端到 client/dist
+npm start           # 服务端同时托管 client/dist，打开 http://localhost:8080
 ```
 
-Then connect from **Claude Desktop**, **Cursor**, **Windsurf**, or any MCP-compatible client.
+环境变量：`PORT`（默认 8080）、`DB_PATH`（默认 `game.db`）；前端可用 `VITE_WS_URL` 指定服务器地址（打包成 App 时需要）。
 
-### 4. Connect to your MCP client
+## 金币规则
 
-<details>
-<summary><strong>Claude Desktop</strong></summary>
+- 新游客发 10,000 金币；余额 < 100 时可领 2,000 救济金，每天 3 次（北京时间自然日）。
+- 所有变动都通过 `server/src/wallet.ts` 的 `Wallet.change`，同一事务内更新余额并写 `coin_logs` 流水；
+  `(reason, ref_id)` 唯一，重复请求不会重复加扣。
 
-Add to `claude_desktop_config.json`:
+## 捕鱼
 
-```json
-{
-  "mcpServers": {
-    "skill-capture": {
-      "command": "python",
-      "args": ["/absolute/path/to/skill-capture/server.py"],
-      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
-    }
-  }
-}
-```
-</details>
+- 炮倍 1 / 2 / 5 / 10，每发消耗 = 炮倍；捕获得到 鱼倍率 × 炮倍。
+- 捕获概率 = `FISH_RTP / 鱼倍率`（默认 0.95，长期回收 5%），数值都在 `shared/src/fish.ts`。
+- 鱼的路径由服务端生成（贝塞尔曲线 + 出生时间），客户端按服务器时间自行计算位置，不需要逐帧同步。
+- 客户端只做表现：`fish.fire` 扣费、`fish.hit` 判定都在 `server/src/fish/FishRoom.ts`。
 
-<details>
-<summary><strong>Cursor</strong></summary>
+## 协议
 
-Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
+WebSocket `/ws`，JSON：请求 `{cmd, seq, data}`，响应 `{cmd, seq, ok, data | error}`，推送 `{cmd, data}`。
+完整定义见 `shared/src/protocol.ts`。
 
-```json
-{
-  "mcpServers": {
-    "skill-capture": {
-      "command": "skill-capture-mcp",
-      "args": [],
-      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
-    }
-  }
-}
-```
-</details>
+## 下一步
 
-<details>
-<summary><strong>Windsurf</strong></summary>
-
-Add to `~/.codeium/windsurf/mcp_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "skill-capture": {
-      "command": "skill-capture-mcp",
-      "args": [],
-      "env": { "LLM_PROVIDER": "openai", "OPENAI_API_KEY": "sk-..." }
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><strong>Codex CLI</strong></summary>
-
-Run:
-
-```bash
-codex mcp add skill-capture -- skill-capture-mcp
-```
-
-Or add to `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.skill-capture]
-type = "stdio"
-command = "skill-capture-mcp"
-args = []
-
-[mcp_servers.skill-capture.env]
-LLM_PROVIDER = "openai"
-OPENAI_API_KEY = "sk-..."
-```
-</details>
-
----
-
-## CLI Mode
-
-Don't need MCP? Use SkillCapture standalone from the terminal:
-
-```bash
-skill-capture-cli analyze           # Run the Day 1/Day 2 pipeline
-skill-capture-cli list              # List all promoted skills
-skill-capture-cli pending           # View pending drafts in the sandbox
-skill-capture-cli run "Deploy App"  # Load and display a specific skill
-```
-
----
-
-## MCP Tools
-
-Once connected, your AI client has access to these tools:
-
-| Tool | Description |
-|------|-------------|
-| `list_skills()` | Browse all promoted skills (reads the lightweight index) |
-| `run_skill(name)` | Load the full content of a specific skill from the Vault |
-| `analyze_today()` | Manually trigger the Day 1/Day 2 pipeline |
-| `get_pending()` | View workflow drafts sitting in the sandbox |
-
----
-
-## Project Structure
-
-```
-skill-capture/
-├── data/
-│   └── pending.json          # The Sandbox
-├── skills/
-│   ├── index.json            # The Index
-│   └── *.md                  # The Vault
-├── logs/                     # Daily chat logs (input)
-├── core/
-│   ├── models.py             # Two-tier Pydantic schemas
-│   ├── storage.py            # File-system I/O layer
-│   ├── evaluator.py          # LLM client interface + evaluator logic
-│   ├── providers.py          # OpenAI, Anthropic, Gemini clients
-│   └── scheduler.py          # APScheduler nightly worker
-├── server.py                 # FastMCP server
-├── cli.py                    # Standalone CLI interface
-└── requirements.txt
-```
-
----
-
-## Tech Stack
-
-- **Python** — Core language
-- **[FastMCP](https://github.com/jlowin/fastmcp)** — Model Context Protocol server framework
-- **[Pydantic](https://docs.pydantic.dev/)** — Structured data validation
-- **[OpenAI](https://platform.openai.com/) · [Anthropic](https://docs.anthropic.com/) · [Google Gemini](https://ai.google.dev/)** — LLM providers (swappable)
-- **[python-frontmatter](https://github.com/eyeseast/python-frontmatter)** — Markdown + YAML parsing
-- **[APScheduler](https://apscheduler.readthedocs.io/)** — Background task scheduling
-
----
-
-## Contributing
-
-Contributions are welcome! Some ideas:
-
-- 🔌 Add more LLM providers (Ollama, local models)
-- 🎨 Build the web UI for skill management
-- 📊 Add usage analytics and skill effectiveness tracking
-- 🧪 Improve the keyword matching with embeddings
-- 📝 Add support for more chat log formats
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE) for details.
+1. 捕鱼：在真机上调手感（射速、子弹速度、鱼的速度和数量），替换正式美术和音效。
+2. 大字牌：先确认规则（地区、胡息门槛），再写规则引擎和测试。
+3. 九个荔枝。
+4. Capacitor 打包安卓 / iOS。
