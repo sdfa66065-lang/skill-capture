@@ -9,6 +9,7 @@ import { openDb } from './db.ts';
 import { GameError } from './errors.ts';
 import { FishRoom } from './fish/FishRoom.ts';
 import { Wallet } from './wallet.ts';
+import { ZipaiRoom } from './zipai/ZipaiRoom.ts';
 
 const FISH_TICK_MS = 500;
 
@@ -27,6 +28,8 @@ export interface GameServer {
 /** 每个 WebSocket 连接对应一个会话 */
 class Session {
   userId: number | null = null;
+  nickname = '';
+  zipaiRoom: ZipaiRoom | null = null;
   fishRoom: FishRoom | null = null;
   fishTimer: NodeJS.Timeout | null = null;
 
@@ -40,6 +43,11 @@ class Session {
     if (this.fishTimer) clearInterval(this.fishTimer);
     this.fishTimer = null;
     this.fishRoom = null;
+  }
+
+  leaveZipai() {
+    this.zipaiRoom?.leave();
+    this.zipaiRoom = null;
   }
 }
 
@@ -61,6 +69,12 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
     return s.fishRoom;
   };
 
+  const requireZipaiRoom = (s: Session): ZipaiRoom => {
+    requireUser(s);
+    if (!s.zipaiRoom) throw new GameError('NOT_IN_ROOM');
+    return s.zipaiRoom;
+  };
+
   const handlers: { [C in RequestCmd]: Handler<C> } = {
     ping: (_s, { t }) => ({ t, serverTime: Date.now() }),
 
@@ -70,6 +84,7 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
       }
       const user = wallet.loginGuest(deviceId);
       s.userId = user.id;
+      s.nickname = user.nickname;
       return { user, serverTime: Date.now() };
     },
 
@@ -96,6 +111,39 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
     'fish.fire': (s, { bulletId, level }) => ({ coins: requireFishRoom(s).fire(bulletId, level) }),
 
     'fish.hit': (s, { bulletId, fishId }) => requireFishRoom(s).hit(bulletId, fishId),
+
+    'zipai.enter': (s) => {
+      const userId = requireUser(s);
+      s.leaveZipai();
+      const room = new ZipaiRoom({
+        roomId: randomUUID(),
+        userId,
+        nickname: s.nickname,
+        wallet,
+        random,
+        now: Date.now,
+        send: (view) => {
+          s.push('zipai.state', view);
+          if (view.result) s.push('coins', { coins: wallet.balance(userId) });
+        },
+      });
+      const view = room.start();
+      s.zipaiRoom = room;
+      return view;
+    },
+
+    'zipai.next': (s) => requireZipaiRoom(s).start(),
+
+    'zipai.action': (s, { action }) => {
+      if (typeof action !== 'object' || action === null) throw new GameError('BAD_REQUEST');
+      requireZipaiRoom(s).act(action);
+      return {};
+    },
+
+    'zipai.leave': (s) => {
+      s.leaveZipai();
+      return {};
+    },
   };
 
   const http = createServer((req, res) => serveStatic(opts.staticDir, req.url ?? '/', res));
@@ -124,7 +172,10 @@ export function startGameServer(opts: GameServerOptions): Promise<GameServer> {
       }
       ws.send(JSON.stringify(reply));
     });
-    ws.on('close', () => session.leaveFish());
+    ws.on('close', () => {
+      session.leaveFish();
+      session.leaveZipai();
+    });
   });
 
   return new Promise((resolve) => {

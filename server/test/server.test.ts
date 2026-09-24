@@ -66,4 +66,24 @@ describe('game server', () => {
     expect(relog.data.user.coins).toBe(hit.data.coins);
     again.ws.close();
   });
+
+  it('大字牌：进房 → 出牌 → 离开结算', async () => {
+    const { ws, call, pushes } = await connect();
+    await call('login', { deviceId: 'integration-device-zipai' });
+    const enter = await call('zipai.enter', {});
+    if (!enter.ok) throw new Error(enter.error);
+    const view = enter.data;
+    expect(view.players.map((p) => p.isBot)).toEqual([false, true, true]);
+    expect(view.phase).toBe('discard');
+
+    const discard = view.options.find((o) => o.type === 'discard')!;
+    expect(await call('zipai.action', { action: discard })).toMatchObject({ ok: true });
+    expect(await call('zipai.action', { action: discard })).toMatchObject({ ok: false, error: 'BAD_REQUEST' });
+    expect(await call('zipai.action', { action: { type: 'chi', cards: 'x' } as never })).toMatchObject({ ok: false });
+    expect(pushes.some((p) => p.cmd === 'zipai.state')).toBe(true);
+
+    expect(await call('zipai.leave', {})).toMatchObject({ ok: true });
+    expect(await call('zipai.next', {})).toMatchObject({ ok: false, error: 'NOT_IN_ROOM' });
+    ws.close();
+  });
 });

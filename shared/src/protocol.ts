@@ -2,6 +2,7 @@
 // 服务端主动推送：{ cmd, data }（没有 seq）
 
 import type { FishState } from './fish.ts';
+import type { ZipaiAction, ZipaiView } from './zipai.ts';
 
 export interface UserInfo {
   id: number;
@@ -29,6 +30,12 @@ export interface Requests {
   'fish.leave': [{}, {}];
   'fish.fire': [{ bulletId: number; level: number }, { coins: number }];
   'fish.hit': [{ bulletId: number; fishId: number }, FishHitResult];
+  /** 进入大字牌房间并开始第一局 */
+  'zipai.enter': [{}, ZipaiView];
+  /** 上一局结束后开始下一局 */
+  'zipai.next': [{}, ZipaiView];
+  'zipai.action': [{ action: ZipaiAction }, {}];
+  'zipai.leave': [{}, {}];
 }
 
 export interface FishHitResult {
@@ -43,6 +50,7 @@ export interface FishHitResult {
 export interface Pushes {
   coins: { coins: number };
   'fish.spawn': { fishes: FishState[] };
+  'zipai.state': ZipaiView;
 }
 
 export type RequestCmd = keyof Requests;

@@ -2,7 +2,7 @@ import { INITIAL_COINS, RELIEF_AMOUNT, RELIEF_DAILY_LIMIT, RELIEF_THRESHOLD, typ
 import type { Db } from './db.ts';
 import { GameError } from './errors.ts';
 
-export type CoinReason = 'init' | 'relief' | 'fish_fire' | 'fish_catch';
+export type CoinReason = 'init' | 'relief' | 'fish_fire' | 'fish_catch' | 'zipai_settle';
 
 /**
  * 唯一可以修改金币余额的地方。

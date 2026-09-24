@@ -13,6 +13,7 @@ export class BootScene extends Phaser.Scene {
   create() {
     createTextures(this);
     net.onClose(() => this.showDisconnected());
+    net.on('coins', ({ coins }) => session.setCoins(coins));
     void this.login();
   }
 
