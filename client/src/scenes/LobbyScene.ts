@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { RELIEF_THRESHOLD } from '@game/shared';
+import { RELIEF_THRESHOLD, ZIPAI_RULES } from '@game/shared';
 import { net, NetError } from '../net.ts';
 import { session } from '../session.ts';
 import { button, errorText, text, toast } from '../ui.ts';
@@ -30,16 +30,24 @@ export class LobbyScene extends Phaser.Scene {
     button(this, width / 2 - 320, cardY, '🐟 捕鱼', () => this.scene.start('Fish'), {
       width: 260, height: 200, color: 0x1d7874, fontSize: 36,
     });
-    button(this, width / 2, cardY, '大字牌\n敬请期待', () => {}, {
-      width: 260, height: 200, fontSize: 30, disabled: true,
+    button(this, width / 2, cardY, '🀄 大字牌', () => this.enterZipai(), {
+      width: 260, height: 200, color: 0x7b2d26, fontSize: 36,
     });
-    button(this, width / 2 + 320, cardY, '九个荔枝\n敬请期待', () => {}, {
-      width: 260, height: 200, fontSize: 30, disabled: true,
+    button(this, width / 2 + 320, cardY, '🍒 九个荔枝', () => this.scene.start('Lychee'), {
+      width: 260, height: 200, color: 0x7b2cbf, fontSize: 36,
     });
 
     const relief = button(this, width / 2, height - 90, '领取救济金', () => void this.claimRelief(), {
       width: 260, color: 0xe76f51,
     }).setVisible(user.coins < RELIEF_THRESHOLD);
+  }
+
+  private enterZipai() {
+    if (session.coins < ZIPAI_RULES.minCoins) {
+      toast(this, `大字牌至少需要 ${ZIPAI_RULES.minCoins} 金币`);
+      return;
+    }
+    this.scene.start('Zipai');
   }
 
   private async claimRelief() {

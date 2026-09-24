@@ -66,4 +66,37 @@ describe('game server', () => {
     expect(relog.data.user.coins).toBe(hit.data.coins);
     again.ws.close();
   });
+
+  it('大字牌：进房 → 出牌 → 离开结算', async () => {
+    const { ws, call, pushes } = await connect();
+    await call('login', { deviceId: 'integration-device-zipai' });
+    const enter = await call('zipai.enter', {});
+    if (!enter.ok) throw new Error(enter.error);
+    const view = enter.data;
+    expect(view.players.map((p) => p.isBot)).toEqual([false, true, true]);
+    expect(view.phase).toBe('discard');
+
+    const discard = view.options.find((o) => o.type === 'discard')!;
+    expect(await call('zipai.action', { action: discard })).toMatchObject({ ok: true });
+    expect(await call('zipai.action', { action: discard })).toMatchObject({ ok: false, error: 'BAD_REQUEST' });
+    expect(await call('zipai.action', { action: { type: 'chi', cards: 'x' } as never })).toMatchObject({ ok: false });
+    expect(pushes.some((p) => p.cmd === 'zipai.state')).toBe(true);
+
+    const coinPushes = pushes.filter((p) => p.cmd === 'coins').length;
+    expect(await call('zipai.leave', {})).toMatchObject({ ok: true });
+    expect(pushes.filter((p) => p.cmd === 'coins').length).toBe(coinPushes + 1);
+    expect(await call('zipai.next', {})).toMatchObject({ ok: false, error: 'NOT_IN_ROOM' });
+    ws.close();
+  });
+
+  it('九个荔枝：转一次扣 8 × 单线押注', async () => {
+    const { ws, call } = await connect();
+    expect(await call('lychee.spin', { lineBet: 1 })).toMatchObject({ ok: false, error: 'NOT_LOGGED_IN' });
+    await call('login', { deviceId: 'integration-device-lychee' });
+    const r = await call('lychee.spin', { lineBet: 2 });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.data.grid).toHaveLength(9);
+    expect(r.data.coins).toBe(INITIAL_COINS - 16 + r.data.win);
+    ws.close();
+  });
 });

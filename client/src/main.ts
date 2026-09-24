@@ -3,6 +3,8 @@ import { WORLD_H, WORLD_W } from '@game/shared';
 import { BootScene } from './scenes/BootScene.ts';
 import { FishScene } from './scenes/FishScene.ts';
 import { LobbyScene } from './scenes/LobbyScene.ts';
+import { LycheeScene } from './scenes/LycheeScene.ts';
+import { ZipaiScene } from './scenes/ZipaiScene.ts';
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -14,5 +16,5 @@ new Phaser.Game({
     width: WORLD_W,
     height: WORLD_H,
   },
-  scene: [BootScene, LobbyScene, FishScene],
+  scene: [BootScene, LobbyScene, FishScene, ZipaiScene, LycheeScene],
 });
