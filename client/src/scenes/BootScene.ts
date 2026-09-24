@@ -1,13 +1,17 @@
 import Phaser from 'phaser';
 import { net, NetError } from '../net.ts';
 import { getDeviceId, session } from '../session.ts';
-import { createTextures } from '../textures.ts';
+import { createTextures, loadArt } from '../textures.ts';
 import { button, errorText, text } from '../ui.ts';
 
-/** 生成贴图 → 连接服务器 → 游客登录 → 进大厅 */
+/** 加载素材 → 生成贴图 → 连接服务器 → 游客登录 → 进大厅 */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
+  }
+
+  preload() {
+    loadArt(this);
   }
 
   create() {
